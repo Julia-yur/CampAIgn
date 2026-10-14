@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {validateBoard,demoBoard,missing} from '../lib/campaign.ts';
+const source=demoBoard.campaigns.flatMap(c=>c.citations.map(q=>q.quote)).join('\n');
+test('accepts grounded example citations and valid influence graph',()=>{assert.equal(validateBoard(demoBoard,source).campaigns.length,3)});
+test('rejects fabricated source quotes',()=>{const board=structuredClone(demoBoard);board.campaigns[0].citations[0].quote='Revenue increased by 900%';assert.throws(()=>validateBoard(board,source),/could not be verified/)});
+test('rejects an influence edge with no source campaign',()=>{const board=structuredClone(demoBoard);board.recommendations[0].connections[0].campaignId='invented';assert.throws(()=>validateBoard(board),/missing evidence/)});
+test('rejects out-of-range influence weights',()=>{const board=structuredClone(demoBoard);board.recommendations[0].connections[0].weight=2;assert.throws(()=>validateBoard(board))});
+test('rejects duplicate evidence identifiers',()=>{const board=structuredClone(demoBoard);board.campaigns[1].id='c1';assert.throws(()=>validateBoard(board),/Duplicate/)});
+test('keeps missing audience data explicit',()=>{assert.equal(validateBoard(demoBoard).campaigns[2].audience,missing)});
