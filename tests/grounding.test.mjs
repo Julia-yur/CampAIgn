@@ -8,3 +8,4 @@ test('rejects an influence edge with no source campaign',()=>{const board=struct
 test('rejects out-of-range influence weights',()=>{const board=structuredClone(demoBoard);board.recommendations[0].connections[0].weight=2;assert.throws(()=>validateBoard(board))});
 test('rejects duplicate evidence identifiers',()=>{const board=structuredClone(demoBoard);board.campaigns[1].id='c1';assert.throws(()=>validateBoard(board),/Duplicate/)});
 test('keeps missing audience data explicit',()=>{assert.equal(validateBoard(demoBoard).campaigns[2].audience,missing)});
+test('accepts a standalone campaign direction without a report connection',()=>{const board=structuredClone(demoBoard);board.recommendations[0].connections=[];assert.equal(validateBoard(board).recommendations[0].connections.length,0)});

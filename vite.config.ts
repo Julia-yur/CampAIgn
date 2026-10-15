@@ -1,5 +1,5 @@
 import vinext from "vinext";
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { readExecutionProfile } from "./scripts/execution-profile.mjs";
 import { sites } from "./build/sites-vite-plugin";
@@ -36,7 +36,12 @@ const localBindingConfig = {
     : [],
 };
 
-export default defineConfig(async ({ command }) => {
+export default defineConfig(async ({ command, mode }) => {
+  // Pass only explicitly allowed local secrets into the dev worker, never the build.
+  const localEnv = command === "serve" ? loadEnv(mode, process.cwd(), ["OPENAI_", "GEMINI_"]) : {};
+  const localVars = Object.fromEntries(["GEMINI_API_KEY", "GEMINI_MODEL"]
+    .map(key => [key, process.env[key] || localEnv[key]])
+    .filter((entry): entry is [string, string] => Boolean(entry[1])));
   // Use Miniflare's local Request.cf placeholder unless fetching is requested.
   process.env.CLOUDFLARE_CF_FETCH_ENABLED ??= "false";
   process.env.WRANGLER_SEND_METRICS ??= "false";
@@ -71,6 +76,7 @@ export default defineConfig(async ({ command }) => {
           ...localBindingConfig,
           ...(command === "serve"
             ? {
+                vars: localVars,
                 services: [
                   {
                     binding: "CONNECTORS",
